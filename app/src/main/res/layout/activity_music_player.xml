@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- ScrollView to make the buttons scrollable -->
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="349dp"
+        android:layout_height="691dp"
+        android:layout_marginRight="2dp">
+
+        <!-- List of songs -->
+        <LinearLayout
+            android:id="@+id/songs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <!-- Add songs dynamically -->
+        </LinearLayout>
+    </ScrollView>
+
+    <ScrollView
+        android:id="@+id/sidebarScrollView"
+        android:layout_width="66dp"
+        android:layout_height="694dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginLeft="-2dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginRight="2dp"
+        android:layout_toRightOf="@+id/scrollView">
+
+        <LinearLayout
+            android:id="@+id/sidebar"
+            android:layout_width="65dp"
+            android:layout_height="731dp"
+            android:layout_alignParentEnd="true"
+            android:orientation="vertical">
+
+            <!-- Add buttons for other letters similarly -->
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- SeekBar at the bottom -->
+
+    <View
+        android:id="@+id/spacerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_above="@id/buttonContainer"
+        android:layout_marginBottom="54dp" />
+
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/spacerView"
+        android:layout_marginBottom="-10dp"
+        android:background="@drawable/seekbar_background"
+        android:max="100"
+        android:progress="0" />
+
+    <Button
+        android:id="@+id/currentSong"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/seekBar"
+        android:layout_marginTop="11dp"
+        android:ellipsize="end"
+        android:gravity="bottom"
+        android:maxLines="1"
+        android:text="Audio File Name" />
+
+    <!-- Button controls -->
+    <LinearLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="0dp"
+        android:orientation="horizontal">
+
+        <!-- Display currently playing audio file name -->
+
+
+        <!-- Backward button -->
+
+        <!-- Stop/Play button -->
+        <ImageButton
+            android:id="@+id/backwardButton"
+            android:layout_width="116dp"
+            android:layout_height="match_parent"
+            android:background="?android:selectableItemBackground"
+            android:contentDescription="Backward Button"
+            android:padding="30dp"
+            android:src="@drawable/baseline_fast_rewind_black_24dp" />
+
+        <ImageButton
+            android:id="@+id/stopPlayButton"
+            android:layout_width="102dp"
+            android:layout_height="match_parent"
+            android:background="?android:selectableItemBackground"
+            android:contentDescription="Stop/Play Button"
+            android:padding="16dp"
+            android:src="@drawable/baseline_play_circle_filled_black_24dp" />
+
+        <!-- Forward button -->
+        <ImageButton
+            android:id="@+id/forwardButton"
+            android:layout_width="105dp"
+            android:layout_height="match_parent"
+            android:background="?android:selectableItemBackground"
+            android:contentDescription="Forward Button"
+            android:padding="30dp"
+            android:src="@drawable/baseline_fast_forward_black_24dp" />
+
+        <!-- Mode button -->
+        <ImageButton
+            android:id="@+id/modeButton"
+            android:layout_width="99dp"
+            android:layout_height="match_parent"
+            android:background="?android:selectableItemBackground"
+            android:contentDescription="Mode Button"
+            android:padding="30dp" />
+    </LinearLayout>
+</RelativeLayout>
