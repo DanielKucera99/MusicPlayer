@@ -1,28 +1,37 @@
 package com.example.musicplayer.music
 
 import android.media.MediaPlayer
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import java.io.IOException
 
 
-
-class AudioPlayer(
+class AudioPlayer (
     private val audioFilePaths: MutableList<String>,
     private var selectedAudioFilePath: String? = audioFilePaths.firstOrNull(),
     private val onNewAudioStarted: (String) -> Unit,
-    private val onProgressUpdate: (Int) -> Unit,
+    private var onProgressUpdate: (Int) -> Unit,
     private var playMode: PlayMode
-
 ) : MediaPlayer.OnCompletionListener {
+
     private var mediaPlayer: MediaPlayer? = null
     private var isPaused: Boolean = false
     private var wasSeekBarMovedDuringPause: Boolean = false // New variable to track seek bar movement during pause
     private var pausePosition: Int = 0
     private var currentAudioIndex: Int = 0
     private var shuffledIndexes: MutableList<Int> = mutableListOf()
+    companion object {
+        private var instance: AudioPlayer? = null
 
+        fun getInstance(): AudioPlayer {
+            if (instance == null) {
+                throw IllegalStateException("AudioPlayer instance has not been initialized")
+            }
+            return instance!!
+        }
+
+        fun setInstance(audioPlayer: AudioPlayer) {
+            instance = audioPlayer
+        }
+    }
     private fun playCurrentAudio() {
         val audioFilePath = audioFilePaths[currentAudioIndex]
         mediaPlayer = MediaPlayer().apply {
@@ -205,5 +214,29 @@ class AudioPlayer(
         shuffledIndexes = (0 until audioFilePaths.size).shuffled().toMutableList()
     }
 
+    fun getCurrentlyPlayingFile(): String {
+        return audioFilePaths[currentAudioIndex]
+    }
+
+    fun setProgressUpdateCallback(callback: ((Int) -> Unit)?) {
+        onProgressUpdate = callback ?: { /* default behavior if callback is null */ }
+    }
+
+    // Method to call the progress update callback function
+    private fun updateProgress(progress: Int) {
+        onProgressUpdate(progress)
+    }
+
+    fun getPlayMode(): PlayMode {
+        return playMode
+    }
+
+    fun getAudioFiles(): MutableList<String> {
+        return audioFilePaths
+    }
+
+    fun getSelectedAudioFilePath(): String? {
+        return selectedAudioFilePath
+    }
 }
 

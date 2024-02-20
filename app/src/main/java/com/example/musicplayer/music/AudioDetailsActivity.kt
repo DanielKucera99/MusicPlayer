@@ -1,16 +1,18 @@
 package com.example.musicplayer.music
 
+import SeekBarManager
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-
 import com.example.musicplayer.R
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
@@ -21,27 +23,17 @@ class AudioDetailsActivity : AppCompatActivity() {
 
     private lateinit var editButton: ImageButton
     private lateinit var audioPlayer: AudioPlayer
+    private lateinit var seekBar: SeekBar
+    private lateinit var seekBarManager: SeekBarManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_audio_details)
-
+        audioPlayer = AudioPlayer.getInstance()
+        seekBar = findViewById(R.id.seekBar)
+        seekBarManager = SeekBarManager(seekBar,audioPlayer)
+        audioPlayer.setProgressUpdateCallback(::onProgressUpdate)
         // Retrieve audio file details from intent extras (if passed from previous activity)
         val audioFilePath = intent.getStringExtra("AUDIO_FILE_PATH")
-        var audioTitle: String? = null
-        var audioArtist: String? = null
-        var audioAlbum: String? = null
-        var audioArtwork: ByteArray? = null
-        var audioDuration = audioFilePath?.let { getDuration(it) }
-        var metadata = audioFilePath?.let { extractAudioMetadata(it) }
-
-
-        metadata?.get("title")?.let { audioTitle = it }
-        metadata?.get("artist")?.let { audioArtist = it }
-        metadata?.get("album")?.let { audioAlbum = it }
-        metadata?.get("artwork")?.let {
-            // If artwork is available, parse it from the string representation to byte array
-            audioArtwork = it.split(",").map { byteStr -> byteStr.toByte() }.toByteArray()
-        }
         editButton = findViewById(R.id.editDetails)
         editButton.setOnClickListener{
 
@@ -57,36 +49,6 @@ class AudioDetailsActivity : AppCompatActivity() {
                 Log.d("AudioDetailsActivity","is file path null")
             }
         }
-        if (audioTitle != null) {
-            findViewById<TextView>(R.id.audio_title).text = audioTitle
-        } else {
-            // Handle the case when audio title is null
-            // For example, you could set a default text
-            findViewById<TextView>(R.id.audio_title).text = "Unknown Title"
-        }
-
-        // Set text for title, artist, and album TextViews
-        findViewById<TextView>(R.id.audio_title).text = audioTitle
-        findViewById<TextView>(R.id.audio_artist).text = audioArtist
-        findViewById<TextView>(R.id.audio_album).text = audioAlbum
-        if (audioFilePath != null) {
-            setEmbeddedImageToImageView(audioFilePath, findViewById(R.id.audio_image))
-        }
-        // Set duration for the seek bar and update timestamp TextView
-        val seekBar = findViewById<SeekBar>(R.id.seekBar)
-        if (audioDuration != null) {
-            seekBar.max = audioDuration.toInt()
-        }
-        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                // Update timestamp TextView
-                findViewById<TextView>(R.id.totalTime).text = formatDuration(progress)
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
     }
 
     private fun formatDuration(milliseconds: Int): String {
@@ -96,7 +58,7 @@ class AudioDetailsActivity : AppCompatActivity() {
         return String.format(Locale.getDefault(), "%02d:%02d", minutes, remainingSeconds)
     }
 
-    fun getEmbeddedImage(audioFilePath: String): ByteArray? {
+    private fun getEmbeddedImage(audioFilePath: String): ByteArray? {
         val retriever = MediaMetadataRetriever()
         retriever.setDataSource(audioFilePath)
         val rawImage = retriever.embeddedPicture
@@ -144,7 +106,7 @@ class AudioDetailsActivity : AppCompatActivity() {
         return metadata
     }
 
-    fun getDuration(audioFilePath: String): Long? {
+    private fun getDuration(audioFilePath: String): Long? {
         return try {
             val audioFile = AudioFileIO.read(File(audioFilePath))
             val audioHeader = audioFile.audioHeader
@@ -157,7 +119,24 @@ class AudioDetailsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        seekBar = findViewById(R.id.seekBar)
 
+        audioPlayer = AudioPlayer.getInstance()
+        audioPlayer.setProgressUpdateCallback(::onProgressUpdate)
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    val newPosition = audioPlayer.getDuration() * progress / 100
+                    audioPlayer.seekTo(newPosition)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+        seekBarManager = SeekBarManager(seekBar,audioPlayer)
+        seekBarManager.startUpdatingSeekBar()
         // Retrieve audio file details again
         val audioFilePath = intent.getStringExtra("AUDIO_FILE_PATH")
         var audioTitle: String? = null
@@ -172,12 +151,19 @@ class AudioDetailsActivity : AppCompatActivity() {
         metadata?.get("album")?.let { audioAlbum = it }
         audioArtworkStr = metadata?.get("artwork")
 
-        // Update UI with the new metadata
-        findViewById<TextView>(R.id.audio_title).text = audioTitle ?: "Unknown Title"
-        findViewById<TextView>(R.id.audio_artist).text = audioArtist
-        findViewById<TextView>(R.id.audio_album).text = audioAlbum
 
-        // Load artwork if available
+        findViewById<TextView>(R.id.audio_title).text = audioTitle ?: "Unknown Title"
+        findViewById<TextView>(R.id.audio_artist).text = audioArtist ?: "Unknown Artist"
+        findViewById<TextView>(R.id.audio_album).text = audioAlbum ?: "Unknown Album"
+        if (audioDuration != null) {
+            findViewById<TextView>(R.id.totalTime).text = formatDuration(audioDuration.toInt())
+        }
+        Handler(Looper.getMainLooper()).postDelayed(object : Runnable {
+            override fun run() {
+                findViewById<TextView>(R.id.currentTime).text = formatDuration(audioPlayer.getCurrentPosition())
+                Handler(Looper.getMainLooper()).postDelayed(this, 1000)
+            }
+        }, 1000)
         if (audioArtworkStr != null) {
             val audioArtworkBytes = audioArtworkStr.split(",").map { byteStr -> byteStr.toByte() }.toByteArray()
             val imageView = findViewById<ImageView>(R.id.audio_image)
@@ -185,11 +171,15 @@ class AudioDetailsActivity : AppCompatActivity() {
             imageView.setImageBitmap(bitmap)
         }
 
-        // Update seek bar max value
-        val seekBar = findViewById<SeekBar>(R.id.seekBar)
-        if (audioDuration != null) {
-            seekBar.max = audioDuration.toInt()
-        }
+    }
+    override fun onPause() {
+        super.onPause()
+        seekBarManager.stopUpdatingSeekBar()
+    }
+
+    private fun onProgressUpdate(progress: Int) {
+        // Update seek bar's progress
+        seekBar.progress = progress
     }
 
 }

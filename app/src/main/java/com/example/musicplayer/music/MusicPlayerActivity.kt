@@ -1,9 +1,9 @@
 package com.example.musicplayer.music
 
+import SeekBarManager
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -17,16 +17,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.musicplayer.R
-import com.example.musicplayer.ui.theme.SeekBarUpdater
 
 enum class PlayMode {
     FORWARD, SHUFFLE, LOOP
 }
 
-class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
+class MusicPlayerActivity : AppCompatActivity(){
 
     private val READ_MEDIA_AUDIO_REQUEST = 123 // You can use any value here
-    private val seekBarUpdater = SeekBarUpdater(updateCallback = this::updateSeekBar)
+
     private lateinit var seekBar: SeekBar
     private lateinit var stopPlayButton: ImageButton
     private lateinit var currentSongButton: Button
@@ -40,7 +39,12 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
     private var playMode: PlayMode = PlayMode.FORWARD
     private lateinit var audioFilePaths: MutableList<String>
     private lateinit var sidebarLayout: LinearLayout
-
+    private lateinit var seekBarManager: SeekBarManager
+    private lateinit var audioPlayerControls: AudioPlayerControls
+    companion object {
+        const val ON_NEW_AUDIO_STARTED_FLAG = "ON_NEW_AUDIO_STARTED_FLAG"
+        const val ON_PROGRESS_UPDATE = "ON_PROGRESS_UPDATE_FLAG"
+    }
 
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -49,8 +53,6 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
         setContentView(R.layout.activity_music_player)
         sidebarLayout = findViewById(R.id.sidebar)
         seekBar = findViewById(R.id.seekBar)
-        seekBar.setOnSeekBarChangeListener(this)
-        stopPlayButton = findViewById(R.id.stopPlayButton)
         audioPlayer = AudioPlayer(
             mutableListOf(),
             selectedAudioFilePath,
@@ -61,8 +63,7 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
                 // Update seek bar's progress
                 seekBar.progress = progress
             },playMode)
-        backwardButton = findViewById(R.id.backwardButton)
-        forwardButton = findViewById(R.id.forwardButton)
+
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
@@ -79,73 +80,10 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
                 // Not needed for this implementation
             }
         })
+        stopPlayButton = findViewById(R.id.stopPlayButton)
+        backwardButton = findViewById(R.id.backwardButton)
+        forwardButton = findViewById(R.id.forwardButton)
         modeButton = findViewById(R.id.modeButton)
-        modeButton.setImageResource(getPlayModeIcon())
-
-        // Set click listener to toggle play mode and update icon
-        modeButton.setOnClickListener {
-            togglePlayMode()
-            when (playMode) {
-                PlayMode.FORWARD -> playMode = PlayMode.SHUFFLE
-                PlayMode.SHUFFLE -> playMode = PlayMode.LOOP
-                PlayMode.LOOP -> playMode = PlayMode.FORWARD
-            }
-            audioPlayer.setPlayMode(playMode)
-            // Set the new icon based on the updated play mode
-            modeButton.setImageResource(getPlayModeIcon())
-        }
-        backwardButton.setOnClickListener {
-            if (isPlaying) {
-                audioPlayer.pauseAudio()
-                isPlaying = false
-                stopPlayButton.setImageResource(R.drawable.baseline_play_circle_filled_black_24dp)
-            }
-            audioPlayer.playPreviousAudioBasedOnMode()
-            updateCurrentSong(selectedAudioFilePath ?: "")
-            isPlaying = true
-            stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
-        }
-
-        forwardButton.setOnClickListener {
-            if (isPlaying) {
-                audioPlayer.pauseAudio()
-                isPlaying = false
-                stopPlayButton.setImageResource(R.drawable.baseline_play_circle_filled_black_24dp)
-            }
-            audioPlayer.playNextAudioBasedOnMode()
-            updateCurrentSong(selectedAudioFilePath ?: "")
-            isPlaying = true
-            stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
-        }
-
-        stopPlayButton.setOnClickListener {
-            if (isPlaying) {
-                audioPlayer.pauseAudio()
-                isPlaying = false
-                stopPlayButton.setImageResource(R.drawable.baseline_play_circle_filled_black_24dp)
-            } else {
-                // Check if a different audio file is being played
-                if (currentAudioFilePath != null && currentAudioFilePath != selectedAudioFilePath) {
-                    // Reset play state and start playing the new audio file
-                    audioPlayer.playAudio(selectedAudioFilePath ?: "")
-                    currentAudioFilePath = selectedAudioFilePath
-                    updateCurrentSong(selectedAudioFilePath ?: "")
-                    seekBarUpdater.startUpdatingSeekBar()
-                } else {
-                    // Resume playback
-                    audioPlayer.resumeAudio()
-                    isPlaying = true
-                    stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
-                }
-            }
-        }
-        audioPlayer.setOnCompletionListener(MediaPlayer.OnCompletionListener {
-            // Play the next audio file when the current one finishes
-            audioPlayer.playNextAudioBasedOnMode()
-            // Update UI or perform any other necessary actions
-            updateCurrentSong(selectedAudioFilePath ?: "")
-        })
-
         // Initialize current song button
         currentSongButton = findViewById(R.id.currentSong)
         currentSongButton.setOnClickListener {
@@ -215,6 +153,20 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
             ::onProgressUpdate,
             playMode
         )
+        seekBarManager = SeekBarManager(seekBar,audioPlayer)
+        seekBarManager.startUpdatingSeekBar()
+        val audioPlayerControls = AudioPlayerControls(audioPlayer, isPlaying)
+
+// Initialize controls
+
+        AudioPlayer.setInstance(audioPlayer)
+        audioPlayerControls.initializeControls(
+            stopPlayButton,
+            backwardButton,
+            forwardButton,
+            modeButton,
+            ::updateCurrentSong
+        )
 
 
         if (audioFilesList.isNotEmpty()) {
@@ -231,7 +183,6 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
                         audioPlayer.playAudio(audioFilePath)
                         selectedAudioFilePath = audioFilePath
                         updateCurrentSong(audioFilePath)
-                        seekBarUpdater.startUpdatingSeekBar()
                         isPlaying = true
                         stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
                     } else {
@@ -280,17 +231,6 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
         }
     }
 
-    private fun updateSeekBar() {
-        val duration =
-            audioPlayer.getDuration() // Implement getDuration() in your AudioPlayer class
-        val currentPosition =
-            audioPlayer.getCurrentPosition() // Implement getCurrentPosition() in your AudioPlayer class
-
-        val progress = (currentPosition.toFloat() / duration.toFloat() * 100).toInt()
-
-        seekBar.progress = progress
-    }
-
     private fun updateCurrentSong(audioFilePath: String) {
         currentSongButton.text = extractAudioTitle(audioFilePath)
         currentAudioFilePath = audioFilePath
@@ -307,60 +247,6 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
         seekBar.progress = progress
     }
 
-    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-        // Check if the progress change is initiated by the user
-        if (fromUser) {
-            // Check if the audio is currently paused
-            if (!isPlaying) {
-                // If the audio is paused, inform the AudioPlayer that the seek bar was moved during pause
-                audioPlayer.setSeekBarMovedDuringPause()
-            }
-        }
-    }
-
-    override fun onStartTrackingTouch(seekBar: SeekBar?) {
-
-    }
-
-    override fun onStopTrackingTouch(seekBar: SeekBar?) {
-
-    }
-
-    private fun togglePlayMode() {
-        // Toggle between play modes: FORWARD -> SHUFFLE -> LOOP -> FORWARD
-        changePlayMode(
-            when (playMode) {
-                PlayMode.FORWARD -> PlayMode.SHUFFLE
-                PlayMode.SHUFFLE -> PlayMode.LOOP
-                PlayMode.LOOP -> PlayMode.FORWARD
-            }
-        )
-    }
-    fun changePlayMode(newMode: PlayMode) {
-        playMode = newMode
-        // Depending on the mode, you can shuffle the audio files or reset the index, etc.
-        // Implement this logic based on your requirements
-        when (playMode) {
-            PlayMode.FORWARD -> {
-                // Sort audio files by name
-                audioFilePaths.sort()
-            }
-            PlayMode.SHUFFLE -> {
-                // Shuffle audio files
-                audioFilePaths.shuffle()
-            }
-            PlayMode.LOOP -> {
-                // No need to modify audio files order for loop mode
-            }
-        }
-    }
-    fun getPlayModeIcon(): Int {
-        return when (playMode) {
-            PlayMode.FORWARD -> R.drawable.outline_arrow_forward_black_24dp
-            PlayMode.SHUFFLE -> R.drawable.baseline_shuffle_black_24dp
-            PlayMode.LOOP -> R.drawable.baseline_repeat_black_24dp
-        }
-    }
     fun scrollToAlphabet(alphabet: Char) {
         val songsLayout: LinearLayout = findViewById(R.id.songs)
         val scrollView: ScrollView = findViewById(R.id.scrollView)
@@ -383,4 +269,12 @@ class MusicPlayerActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        seekBarManager.stopUpdatingSeekBar()
+    }
+    override fun onResume() {
+        super.onResume()
+        seekBarManager.startUpdatingSeekBar()
+    }
 }
