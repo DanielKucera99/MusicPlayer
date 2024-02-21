@@ -1,5 +1,6 @@
+package com.example.musicplayer.music
+
 import android.widget.SeekBar
-import com.example.musicplayer.music.AudioPlayer
 import com.example.musicplayer.ui.theme.SeekBarUpdater
 
 class SeekBarManager(

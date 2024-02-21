@@ -43,11 +43,9 @@ class AudioDetailsEditActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (checkPermission()) {
-            // Permissions already granted, proceed with retrieving audio files
             Log.d("test", "Permission checked")
             inflateLayoutAndInitializeViews()
         } else {
-            // Permissions not granted, request the permission
             requestPermission()
         }
 
@@ -61,30 +59,24 @@ class AudioDetailsEditActivity : AppCompatActivity() {
 
         private fun initializeViews() {
             val audioFilePath = intent.getStringExtra("AUDIO_FILE_PATH")
-            // Initialize EditText fields
             titleEditText = findViewById(R.id.titleEditText)
             artistEditText = findViewById(R.id.artistEditText)
             albumEditText = findViewById(R.id.albumEditText)
             yearEditText = findViewById(R.id.yearEditText)
             genreEditText = findViewById(R.id.genreEditText)
 
-            // Initialize ImageView for displaying selected image
             selectedImageView = findViewById(R.id.selectedImageView)
 
-            // Set OnClickListener for the button to select image
             val selectImageButton: Button = findViewById(R.id.selectImageButton)
             selectImageButton.setOnClickListener {
                 selectImage()
             }
 
-            // Set OnClickListener for the button to save metadata
             val saveButton: Button = findViewById(R.id.saveButton)
             saveButton.setOnClickListener {
                 saveMetadata(audioFilePath.toString())
             }
         }
-        // Initialize EditText fields
-        // Request permission for writing media audio
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun checkPermission(): Boolean {
@@ -97,7 +89,6 @@ class AudioDetailsEditActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestPermission() {
-        // Request the permission
         ActivityCompat.requestPermissions(
             this,
             arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
@@ -113,11 +104,8 @@ class AudioDetailsEditActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == WRITE_MEDIA_AUDIO_REQUEST) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d("test", "Permission granted!")
-                // Permission granted, proceed with editing
                 inflateLayoutAndInitializeViews()
             } else {
-                // Permission denied, inform the user
                 Toast.makeText(this, "Permission denied. Metadata editing requires storage access.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -129,23 +117,18 @@ class AudioDetailsEditActivity : AppCompatActivity() {
     }
 
     private fun saveMetadata(audioFilePath: String) {
-        // Get metadata values from EditText fields
         val title = titleEditText.text.toString()
         val artist = artistEditText.text.toString()
         val album = albumEditText.text.toString()
         val year = yearEditText.text.toString()
         val genre = genreEditText.text.toString()
 
-        // Validate that the audio file exists
         if (audioFilePath.isNotEmpty()) {
             val audioFile = File(audioFilePath)
 
-            // Check if the audio file exists
             if (audioFile.exists()) {
-                // Set the metadata
                 setMetadata(audioFile, title, artist, album, year, genre, imageFile)
             } else {
-                // Handle error if audio file doesn't exist
                 showToast("Audio file not found")
             }
         }
@@ -161,10 +144,8 @@ class AudioDetailsEditActivity : AppCompatActivity() {
         imageFile: File?
     ) {
         try {
-            // Read audio file
             val audio: AudioFile = AudioFileIO.read(audioFile)
 
-            // Set metadata
             val tag = audio.tagOrCreateAndSetDefault
             if (title.isNotEmpty()) {
                 tag.setField(FieldKey.TITLE, title)
@@ -187,21 +168,16 @@ class AudioDetailsEditActivity : AppCompatActivity() {
                 tag.setField(FieldKey.COVER_ART, imageData.toString())
             }
 
-            // Save changes
             AudioFileIO.write(audio)
 
-            // Finish activity
             finish()
         } catch (e: Exception) {
-            // Handle exception
             e.printStackTrace()
             showToast("Failed to save metadata")
         }
     }
 
     private fun showToast(message: String) {
-        // Show a Toast message
-        // You can implement this method based on your application's Toast mechanism
     }
 
 

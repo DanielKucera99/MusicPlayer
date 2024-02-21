@@ -3,16 +3,33 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
-    <ImageButton
-        android:id="@+id/editDetails"
-        android:layout_width="73dp"
-        android:layout_height="match_parent"
-        android:background="?android:selectableItemBackground"
-        android:src="@drawable/outline_edit_black_24dp"
-        android:contentDescription="Edit Button"
-        android:layout_gravity="right"
-        android:padding="30dp" />
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?android:selectableItemBackground"
+            android:contentDescription="Back Button"
+            android:padding="30dp"
+            android:src="@drawable/outline_arrow_back_black_24dp" />
+
+        <ImageButton
+            android:id="@+id/editDetails"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?android:selectableItemBackground"
+            android:contentDescription="Edit Button"
+            android:padding="30dp"
+            android:src="@drawable/outline_edit_black_24dp" />
+    </LinearLayout>
+
+
 
     <ImageView
         android:id="@+id/audio_image"
