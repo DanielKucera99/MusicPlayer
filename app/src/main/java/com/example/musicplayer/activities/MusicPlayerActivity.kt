@@ -55,16 +55,6 @@ class MusicPlayerActivity : AppCompatActivity(){
         songs = findViewById(R.id.songs)
         sidebarLayout = findViewById(R.id.sidebar)
         seekBar = findViewById(R.id.seekBar)
-        audioPlayer = AudioPlayer(
-            mutableListOf(),
-            selectedAudioFilePath,
-            { newAudioFilePath ->
-                updateCurrentSong(newAudioFilePath)
-            },
-            { progress ->
-                // Update seek bar's progress
-                seekBar.progress = progress
-            },playMode)
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
@@ -74,49 +64,28 @@ class MusicPlayerActivity : AppCompatActivity(){
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                // Not needed for this implementation
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                // Not needed for this implementation
             }
         })
         stopPlayButton = findViewById(R.id.stopPlayButton)
         backwardButton = findViewById(R.id.backwardButton)
         forwardButton = findViewById(R.id.forwardButton)
         modeButton = findViewById(R.id.modeButton)
-        // Initialize current song button
         currentSongButton = findViewById(R.id.currentSong)
         currentSongButton.setOnClickListener {
             if(currentAudioFilePath != null) {
                 val intent = Intent(this, AudioDetailsActivity::class.java)
-                // Pass any necessary data to the AudioDetailsActivity using intent extras
                 intent.putExtra("AUDIO_FILE_PATH", currentAudioFilePath)
-                // Similarly, pass other details like artist, album, etc., to the intent extras
                 startActivity(intent)
             }
         }
 
-        val alphabets = ('A'..'Z').toList()
-
-
-        alphabets.forEach { alphabet ->
-            val alphabetButton = Button(this)
-            alphabetButton.text = alphabet.toString()
-            alphabetButton.setOnClickListener {
-                // Scroll to the position where the first song starting with this alphabet is located
-                scrollToAlphabet(alphabet)
-            }
-            // Add button to the sidebar LinearLayout
-            sidebarLayout.addView(alphabetButton)
-        }
-        // Check and request permissions
         if (checkPermission()) {
-            // Permissions already granted, proceed with retrieving audio files
             retrieveAudioFiles()
             pausePlay(audioFilePaths)
         } else {
-            // Permissions not granted, request the permission
             requestPermission()
         }
 
@@ -124,7 +93,6 @@ class MusicPlayerActivity : AppCompatActivity(){
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun checkPermission(): Boolean {
-        // Check if the permission is granted
         return ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.READ_MEDIA_AUDIO
@@ -133,7 +101,6 @@ class MusicPlayerActivity : AppCompatActivity(){
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestPermission() {
-        // Request the permission
         ActivityCompat.requestPermissions(
             this,
             arrayOf(Manifest.permission.READ_MEDIA_AUDIO),
@@ -149,10 +116,23 @@ class MusicPlayerActivity : AppCompatActivity(){
             {
                 oldAudioFilePaths.add(audioFilePath)
             }
-        audioFilePaths = audioFilesList.toMutableList() // Convert to list of paths
+        audioFilePaths = audioFilesList.toMutableList()
         audioFilePaths.sortBy { filePath ->
             val file = File(filePath)
             file.name
+        }
+
+        val startingLetters = audioFilePaths.mapNotNull { filePath ->
+            val file = File(filePath).name
+            file.firstOrNull()?.uppercase()?.singleOrNull()
+        }.distinct().sorted()
+        startingLetters.forEach { letter ->
+            val alphabetButton = Button(this)
+            alphabetButton.text = letter.toString()
+            alphabetButton.setOnClickListener {
+                scrollToAlphabet(letter)
+            }
+            sidebarLayout.addView(alphabetButton)
         }
         audioPlayer = AudioPlayer(
             audioFilePaths,
@@ -165,7 +145,6 @@ class MusicPlayerActivity : AppCompatActivity(){
         seekBarManager.startUpdatingSeekBar()
 
         audioPlayerControls = AudioPlayerControls(audioPlayer)
-// Initialize controls
 
         AudioPlayer.setInstance(audioPlayer)
         audioPlayerControls.initializeControls(
@@ -234,9 +213,13 @@ class MusicPlayerActivity : AppCompatActivity(){
     override fun onResume() {
         super.onResume()
         seekBarManager.startUpdatingSeekBar()
-        isOnResume = true
+
         audioPlayer.setOnNewAudioStartedCallback(::onNewAudioStarted)
-        currentSongButton.text = extractAudioTitle(audioPlayer.getCurrentlyPlayingFile())
+        if(isOnResume) {
+            currentSongButton.text = extractAudioTitle(audioPlayer.getCurrentlyPlayingFile())
+        } else {
+            currentSongButton.text = "No audio file"
+        }
         selectedAudioFilePath = audioPlayer.getCurrentlyPlayingFile()
         playMode = audioPlayerControls.getAudioPlayer().getPlayMode()
         audioPlayerControls.setPlayMode(playMode)
@@ -249,6 +232,7 @@ class MusicPlayerActivity : AppCompatActivity(){
             stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
             audioPlayerControls.play()
         }
+        isOnResume = true
         pausePlay(audioPlayer.getAudioFiles())
 
     }
@@ -265,8 +249,6 @@ class MusicPlayerActivity : AppCompatActivity(){
                     button.setOnClickListener {
                     if (!audioPlayer.getAudioCurrentState()){
                         if (selectedAudioFilePath != audioFilePath) {
-
-                            // Reset play state and start playing the new audio file
                             audioPlayer.playAudio(audioFilePath)
                             selectedAudioFilePath = audioFilePath
                             updateCurrentSong(audioFilePath)
@@ -274,7 +256,6 @@ class MusicPlayerActivity : AppCompatActivity(){
                             audioPlayerControls.play()
                             stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
                         } else {
-                            // If the same audio file is selected, toggle playback state
                             if (isPlaying) {
                                 audioPlayer.pauseAudio()
                                 isPlaying = false
@@ -289,7 +270,6 @@ class MusicPlayerActivity : AppCompatActivity(){
                         }
                     } else {
                         if (selectedAudioFilePath != audioFilePath) {
-                            // Reset play state and start playing the new audio file
                             audioPlayer.playAudio(audioFilePath)
                             selectedAudioFilePath = audioFilePath
                             updateCurrentSong(audioFilePath)

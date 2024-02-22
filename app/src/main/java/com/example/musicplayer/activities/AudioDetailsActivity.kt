@@ -45,7 +45,6 @@ class AudioDetailsActivity : AppCompatActivity() {
         audioPlayer.setProgressUpdateCallback(::onProgressUpdate)
         audioPlayer.setOnNewAudioStartedCallback(::onNewAudioStarted)
         audioPlayerControls = AudioPlayerControls(audioPlayer)
-        // Retrieve audio file details from intent extras (if passed from previous activity)
         val audioFilePath = intent.getStringExtra("AUDIO_FILE_PATH")
         if(!audioPlayer.getAudioCurrentState()){
 
@@ -90,8 +89,6 @@ class AudioDetailsActivity : AppCompatActivity() {
                 val artwork = audioFileTag.firstArtwork
                 if (artwork != null) {
                     val imageData = artwork.binaryData
-                    // Convert the byte array to a base64 string or handle it as needed
-                    // For simplicity, let's just store the byte array directly
                     metadata["artwork"] = imageData.joinToString(",")
                 }
             }

@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -43,15 +42,11 @@ class AudioDetailsEditActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (checkPermission()) {
-            Log.d("test", "Permission checked")
             inflateLayoutAndInitializeViews()
         } else {
             requestPermission()
         }
-
     }
-
-
         private fun inflateLayoutAndInitializeViews() {
             setContentView(R.layout.activity_audio_details_edit)
             initializeViews()
@@ -80,7 +75,6 @@ class AudioDetailsEditActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun checkPermission(): Boolean {
-        // Check if the permission is granted
         return ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.WRITE_EXTERNAL_STORAGE

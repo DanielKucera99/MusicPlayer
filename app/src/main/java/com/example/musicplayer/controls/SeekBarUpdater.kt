@@ -6,14 +6,12 @@ class SeekBarUpdater(private val updateIntervalMillis: Long = 1000, private val 
     private lateinit var seekBarUpdateRunnable: Runnable
 
     fun startUpdatingSeekBar() {
-        // Initialize the runnable
         seekBarUpdateRunnable = object : Runnable {
             override fun run() {
                 updateCallback.invoke() // Perform the update action
                 seekBarUpdateHandler.postDelayed(this, updateIntervalMillis) // Schedule the next update
             }
         }
-        // Start updating the seek bar
         seekBarUpdateHandler.postDelayed(seekBarUpdateRunnable, updateIntervalMillis)
     }
 

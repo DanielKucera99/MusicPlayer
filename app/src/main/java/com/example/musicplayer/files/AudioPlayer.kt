@@ -15,7 +15,7 @@ class AudioPlayer (
 
     private var mediaPlayer: MediaPlayer? = null
     private var isPaused: Boolean = false
-    private var wasSeekBarMovedDuringPause: Boolean = false // New variable to track seek bar movement during pause
+    private var wasSeekBarMovedDuringPause: Boolean = false
     private var pausePosition: Int = 0
     private var currentAudioIndex: Int = 0
     private var shuffledIndexes: MutableList<Int> = mutableListOf()
@@ -196,6 +196,7 @@ class AudioPlayer (
     fun getCurrentlyPlayingFile(): String {
         return audioFilePaths[currentAudioIndex]
     }
+
 
     fun setProgressUpdateCallback(callback: ((Int) -> Unit)?) {
         onProgressUpdate = callback ?: { /* default behavior if callback is null */ }
