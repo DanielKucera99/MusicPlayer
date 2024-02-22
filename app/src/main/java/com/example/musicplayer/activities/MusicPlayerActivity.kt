@@ -1,11 +1,10 @@
-package com.example.musicplayer.music
+package com.example.musicplayer.activities
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -16,6 +15,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.musicplayer.R
+import com.example.musicplayer.controls.AudioPlayerControls
+import com.example.musicplayer.controls.SeekBarManager
+import com.example.musicplayer.files.AudioFileScanner
+import com.example.musicplayer.files.AudioPlayer
+import java.io.File
 
 enum class PlayMode {
     FORWARD, SHUFFLE, LOOP
@@ -88,7 +92,6 @@ class MusicPlayerActivity : AppCompatActivity(){
                 val intent = Intent(this, AudioDetailsActivity::class.java)
                 // Pass any necessary data to the AudioDetailsActivity using intent extras
                 intent.putExtra("AUDIO_FILE_PATH", currentAudioFilePath)
-                intent.putExtra("IS_PLAYING", isPlaying)
                 // Similarly, pass other details like artist, album, etc., to the intent extras
                 startActivity(intent)
             }
@@ -141,12 +144,16 @@ class MusicPlayerActivity : AppCompatActivity(){
     private fun retrieveAudioFiles() {
         val audioFileScanner = AudioFileScanner(this)
         val audioFilesList = audioFileScanner.getAudioFiles()
-            oldAudioFilePaths.clear()
+        oldAudioFilePaths.clear()
             for (audioFilePath in audioFilePaths)
             {
                 oldAudioFilePaths.add(audioFilePath)
             }
         audioFilePaths = audioFilesList.toMutableList() // Convert to list of paths
+        audioFilePaths.sortBy { filePath ->
+            val file = File(filePath)
+            file.name
+        }
         audioPlayer = AudioPlayer(
             audioFilePaths,
             selectedAudioFilePath,
@@ -183,7 +190,6 @@ class MusicPlayerActivity : AppCompatActivity(){
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == READ_MEDIA_AUDIO_REQUEST) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d("test", "Permission granted!")
                 retrieveAudioFiles()
             }
         }
@@ -232,21 +238,22 @@ class MusicPlayerActivity : AppCompatActivity(){
         audioPlayer.setOnNewAudioStartedCallback(::onNewAudioStarted)
         currentSongButton.text = extractAudioTitle(audioPlayer.getCurrentlyPlayingFile())
         selectedAudioFilePath = audioPlayer.getCurrentlyPlayingFile()
-        playMode = audioPlayer.getPlayMode()
+        playMode = audioPlayerControls.getAudioPlayer().getPlayMode()
+        audioPlayerControls.setPlayMode(playMode)
+        audioPlayer.setPlayMode(playMode)
         modeButton.setImageResource(audioPlayerControls.getPlayModeIcon())
-        isPlaying = if(audioPlayer.getAudioCurrentState()) {
+        if(audioPlayer.getAudioCurrentState()) {
             stopPlayButton.setImageResource(R.drawable.baseline_play_circle_filled_black_24dp)
-            false
+            audioPlayerControls.pause()
         } else {
             stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
-            true
+            audioPlayerControls.play()
         }
         pausePlay(audioPlayer.getAudioFiles())
 
     }
 
     private fun pausePlay(audioFilesList: MutableList<String>){
-        Log.d("MPA","In the pause play")
         if (audioFilesList.isNotEmpty()) {
             for (audioFilePath in audioFilesList) {
                 val audioTitle = extractAudioTitle(audioFilePath)
@@ -256,15 +263,15 @@ class MusicPlayerActivity : AppCompatActivity(){
                     songs.addView(button)
                 }
                     button.setOnClickListener {
-                    if (isPlaying){
-                        if (selectedAudioFilePath != audioPlayer.getCurrentlyPlayingFile()) {
+                    if (!audioPlayer.getAudioCurrentState()){
+                        if (selectedAudioFilePath != audioFilePath) {
+
                             // Reset play state and start playing the new audio file
                             audioPlayer.playAudio(audioFilePath)
                             selectedAudioFilePath = audioFilePath
                             updateCurrentSong(audioFilePath)
                             isPlaying = true
                             audioPlayerControls.play()
-
                             stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
                         } else {
                             // If the same audio file is selected, toggle playback state

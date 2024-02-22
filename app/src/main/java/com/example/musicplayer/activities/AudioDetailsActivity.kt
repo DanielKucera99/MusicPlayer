@@ -1,4 +1,4 @@
-package com.example.musicplayer.music
+package com.example.musicplayer.activities
 
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -11,6 +11,9 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.musicplayer.R
+import com.example.musicplayer.controls.AudioPlayerControls
+import com.example.musicplayer.controls.SeekBarManager
+import com.example.musicplayer.files.AudioPlayer
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import java.io.File
@@ -29,7 +32,6 @@ class AudioDetailsActivity : AppCompatActivity() {
     private lateinit var stopPlayButton: ImageButton
     private lateinit var backButton: ImageButton
     private lateinit var audioPlayerControls: AudioPlayerControls
-    private var isPlaying: Boolean = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_audio_details)
@@ -45,8 +47,7 @@ class AudioDetailsActivity : AppCompatActivity() {
         audioPlayerControls = AudioPlayerControls(audioPlayer)
         // Retrieve audio file details from intent extras (if passed from previous activity)
         val audioFilePath = intent.getStringExtra("AUDIO_FILE_PATH")
-       isPlaying = intent.getBooleanExtra("IS_PLAYING",false)
-        if(isPlaying){
+        if(!audioPlayer.getAudioCurrentState()){
 
             audioPlayerControls.play()
         }
@@ -138,8 +139,7 @@ class AudioDetailsActivity : AppCompatActivity() {
         forwardButton = findViewById(R.id.forwardButton)
         modeButton = findViewById(R.id.modeButton)
         val audioPlayerControls = AudioPlayerControls(audioPlayer)
-        isPlaying = intent.getBooleanExtra("IS_PLAYING",false)
-        if(isPlaying) {
+        if(!audioPlayer.getAudioCurrentState()) {
             stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
             audioPlayerControls.play()
         }

@@ -1,4 +1,4 @@
-package com.example.musicplayer.music
+package com.example.musicplayer.files
 
 import android.content.Context
 import android.database.Cursor

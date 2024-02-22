@@ -1,7 +1,7 @@
-package com.example.musicplayer.music
+package com.example.musicplayer.controls
 
 import android.widget.SeekBar
-import com.example.musicplayer.ui.theme.SeekBarUpdater
+import com.example.musicplayer.files.AudioPlayer
 
 class SeekBarManager(
     private val seekBar: SeekBar,

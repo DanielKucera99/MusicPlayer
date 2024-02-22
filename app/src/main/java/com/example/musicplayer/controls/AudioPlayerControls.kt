@@ -1,12 +1,13 @@
-package com.example.musicplayer.music
+package com.example.musicplayer.controls
 
 import android.widget.ImageButton
 import com.example.musicplayer.R
+import com.example.musicplayer.files.AudioPlayer
+import com.example.musicplayer.activities.PlayMode
 
 class AudioPlayerControls(private val audioPlayer: AudioPlayer){
 
     private var playMode = audioPlayer.getPlayMode()
-    private var audioFilePaths = audioPlayer.getAudioFiles()
     private var isPlaying: Boolean = false
     fun play() {
         isPlaying = true
@@ -24,13 +25,8 @@ class AudioPlayerControls(private val audioPlayer: AudioPlayer){
        modeButton.setImageResource(getPlayModeIcon())
       modeButton.setOnClickListener {
           togglePlayMode()
-          playMode = when (playMode) {
-              PlayMode.FORWARD -> PlayMode.SHUFFLE
-              PlayMode.SHUFFLE -> PlayMode.LOOP
-              PlayMode.LOOP -> PlayMode.FORWARD
-          }
-          audioPlayer.setPlayMode(playMode)
           modeButton.setImageResource(getPlayModeIcon())
+          audioPlayer.setPlayMode(playMode)
       }
       backwardButton.setOnClickListener {
           if (isPlaying) {
@@ -67,6 +63,7 @@ class AudioPlayerControls(private val audioPlayer: AudioPlayer){
           } else {
                   audioPlayer.resumeAudio()
                   isPlaying = true
+
                   stopPlayButton.setImageResource(R.drawable.baseline_pause_circle_black_24dp)
               }
           }
@@ -84,21 +81,10 @@ class AudioPlayerControls(private val audioPlayer: AudioPlayer){
             }
         )
     }
-    private fun changePlayMode(newMode: PlayMode) {
+        private fun changePlayMode(newMode: PlayMode) {
         playMode = newMode
-        when (playMode) {
-            PlayMode.FORWARD -> {
-                audioFilePaths.sort()
-            }
-
-            PlayMode.SHUFFLE -> {
-                audioFilePaths.shuffle()
-            }
-
-            PlayMode.LOOP -> {
-            }
+        audioPlayer.setPlayMode(newMode)
         }
-    }
 
     fun getPlayModeIcon(): Int {
         return when (audioPlayer.getPlayMode()) {
@@ -106,6 +92,13 @@ class AudioPlayerControls(private val audioPlayer: AudioPlayer){
             PlayMode.SHUFFLE -> R.drawable.baseline_shuffle_black_24dp
             PlayMode.LOOP -> R.drawable.baseline_repeat_black_24dp
         }
+    }
+    fun getAudioPlayer(): AudioPlayer {
+        return audioPlayer
+    }
+
+    fun setPlayMode(playMode: PlayMode){
+        this.playMode = playMode
     }
 
 }

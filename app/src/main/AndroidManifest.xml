@@ -22,7 +22,7 @@
 
 
         <activity
-            android:name=".music.MusicPlayerActivity" android:exported="true" android:theme="@style/Theme.AppCompat">
+            android:name=".activities.MusicPlayerActivity" android:exported="true" android:theme="@style/Theme.AppCompat">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -31,11 +31,11 @@
         </activity>
 
         <activity
-            android:name=".music.AudioDetailsActivity"
+            android:name=".activities.AudioDetailsActivity"
             android:theme="@style/Theme.AppCompat" />
 
         <activity
-            android:name=".music.AudioDetailsEditActivity"
+            android:name=".activities.AudioDetailsEditActivity"
             android:theme="@style/Theme.AppCompat" />
 
     </application>

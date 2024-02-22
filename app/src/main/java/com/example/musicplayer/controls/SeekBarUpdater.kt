@@ -1,4 +1,4 @@
-package com.example.musicplayer.ui.theme
+package com.example.musicplayer.controls
 import android.os.Handler
 
 class SeekBarUpdater(private val updateIntervalMillis: Long = 1000, private val updateCallback: () -> Unit) {

@@ -1,7 +1,8 @@
-package com.example.musicplayer.music
+package com.example.musicplayer.files
 
 import android.media.MediaPlayer
 import android.util.Log
+import com.example.musicplayer.activities.PlayMode
 
 
 class AudioPlayer (
@@ -33,6 +34,7 @@ class AudioPlayer (
         }
     }
     private fun playCurrentAudio() {
+        isPaused = false
         val audioFilePath = audioFilePaths[currentAudioIndex]
         mediaPlayer = MediaPlayer().apply {
             setDataSource(audioFilePath)
@@ -49,13 +51,6 @@ class AudioPlayer (
 
 
     override fun onCompletion(mediaPlayer: MediaPlayer) {
-        currentAudioIndex = (currentAudioIndex + 1) % audioFilePaths.size
-        playCurrentAudio()
-        onNewAudioStarted(audioFilePaths[currentAudioIndex])
-    }
-
-     fun playNextAudioBasedOnMode() {
-         Log.d("AP","playmode: $playMode")
         when (playMode) {
             PlayMode.FORWARD -> {
                 currentAudioIndex = (currentAudioIndex + 1) % audioFilePaths.size
@@ -70,6 +65,31 @@ class AudioPlayer (
                 if (shuffledIndexes.isEmpty()) {
                     shuffleAudioFilePaths()
                 }
+
+            }
+            PlayMode.LOOP -> {
+            }
+        }
+        playCurrentAudio()
+        onNewAudioStarted(audioFilePaths[currentAudioIndex])
+    }
+
+     fun playNextAudioBasedOnMode() {
+        when (playMode) {
+            PlayMode.FORWARD -> {
+                currentAudioIndex = (currentAudioIndex + 1) % audioFilePaths.size
+            }
+            PlayMode.SHUFFLE -> {
+              if (shuffledIndexes.isEmpty()) {
+                    shuffleAudioFilePaths()
+                }
+
+                val nextIndex = shuffledIndexes.removeAt(0)
+                currentAudioIndex = nextIndex
+                if (shuffledIndexes.isEmpty()) {
+                    shuffleAudioFilePaths()
+                }
+
             }
             PlayMode.LOOP -> {
             }
@@ -87,7 +107,15 @@ class AudioPlayer (
                 }
             }
             PlayMode.SHUFFLE -> {
-                currentAudioIndex = (currentAudioIndex + (0 until audioFilePaths.size).random()) % audioFilePaths.size
+                if (shuffledIndexes.isEmpty()) {
+                    shuffleAudioFilePaths()
+                }
+
+                val nextIndex = shuffledIndexes.removeAt(0)
+                currentAudioIndex = nextIndex
+                if (shuffledIndexes.isEmpty()) {
+                    shuffleAudioFilePaths()
+                }
             }
             PlayMode.LOOP -> {
 
@@ -157,8 +185,8 @@ class AudioPlayer (
     fun setOnCompletionListener(listener: MediaPlayer.OnCompletionListener) {
         mediaPlayer?.setOnCompletionListener(listener)
     }
-    fun setPlayMode(playmode: PlayMode){
-        playMode = playmode
+    fun setPlayMode(playMode: PlayMode){
+        this.playMode = playMode
     }
 
     private fun shuffleAudioFilePaths() {
@@ -192,5 +220,6 @@ class AudioPlayer (
     fun getAudioCurrentState(): Boolean {
         return isPaused
     }
+
 }
 
